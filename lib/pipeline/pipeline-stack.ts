@@ -35,7 +35,7 @@ export class PipelineStack extends cdk.Stack {
       });
 
     // add stage here
-    const coginitoStage = new CognitoStage(this, props.branch.concat('Stage'), {
+    const cognitoStage = new CognitoStage(this, props.branch.concat('Stage'), {
       branch: props.branch,
       env: {
         account: props.awsAccount,
@@ -43,6 +43,6 @@ export class PipelineStack extends cdk.Stack {
       }
     });
 
-    pipeline.addStage(coginitoStage);
+    pipeline.addStage(cognitoStage);
   }
 }
