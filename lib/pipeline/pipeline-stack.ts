@@ -27,7 +27,7 @@ export class PipelineStack extends cdk.Stack {
         //   }
         // },
         synth: new cdk_pipeline.ShellStep('Synth', {
-           input: cdk_pipeline.CodePipelineSource.gitHub('siecola/CognitoICC', props.branch),
+           input: cdk_pipeline.CodePipelineSource.gitHub('Cristianoaf81GIT/Cognito_icc_example', props.branch),
            commands: [
               'npm ci',
               'npm run build',
