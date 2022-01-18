@@ -23,6 +23,7 @@ exports.handler = async function (event, context) {
   }).promise();
 
   console.log(userInfo);
+  console.log(event.requestContext.authorizer.claims);
 
   if (event.resource === "/products") {
     return {

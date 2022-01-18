@@ -191,8 +191,9 @@ export class CognitoAppStack extends cdk.Stack {
             scopes: [cognito.OAuthScope
                .resourceServer(adminResourceServer, adminWebScope), cognito.OAuthScope.COGNITO_ADMIN]
          }
-      })
+      })      
 
+      
       const productsAuthorizer = new apigateway.CognitoUserPoolsAuthorizer(this, "ProductsAuthorizer", {
          cognitoUserPools: [customerPool, adminPool],
          authorizerName: "ProductsAuthorizer"
