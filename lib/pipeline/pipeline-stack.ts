@@ -8,41 +8,37 @@ dotenv.config();
 
 
 interface PipelineStackProps extends cdk.StackProps {
-  branch: string;
-  awsAccount: string;
-  awsRegion: string;
+  branch: string,
+  awsAccount: string,
+  awsRegion: string
 }
 
 export class PipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: PipelineStackProps) {
-    super(scope, id, props);
+     super(scope, id, props)
 
-    const pipeline = new cdk_pipeline
-      .CodePipeline(
-        this, 'CognitoPipeLine'.concat(props.branch), {
-          pipelineName: 'CognitoPipeLine'.concat(props.branch),
-          dockerEnabledForSynth: true,
-          crossAccountKeys: true,
-          synth: new cdk_pipeline.ShellStep('Synth', {
-            input: cdk_pipeline.CodePipelineSource
-              .gitHub('Cristianoaf81GIT/Cognito_icc_example', props.branch),
-            commands: [
+     const pipeline = new cdk_pipeline.CodePipeline(this, 'CognitoPipeline'.concat(props.branch), {
+        pipelineName: 'CognitoPipeline'.concat(props.branch),
+        dockerEnabledForSynth: true,
+        crossAccountKeys: true,
+        synth: new cdk_pipeline.ShellStep('Synth', {
+           input: cdk_pipeline.CodePipelineSource.gitHub('siecola/CognitoICC', props.branch),
+           commands: [
               'npm ci',
               'npm run build',
               'npx cdk synth'
-            ]  
-          })
-      });
+           ]
+        })
+     })
 
-    // add stage here
-    const cognitoStage = new CognitoStage(this, props.branch.concat('Stage'), {
-      branch: props.branch,
-      env: {
-        account: props.awsAccount,
-        region: props.awsRegion
-      }
-    });
-
-    pipeline.addStage(cognitoStage);
+     //Add the stage here!
+     const cognitoStage = new CognitoStage(this, props.branch.concat("Stage"), {
+        branch: props.branch,
+        env: {
+           account: props.awsAccount,
+           region: props.awsRegion
+        }
+     })
+     pipeline.addStage(cognitoStage)
   }
 }

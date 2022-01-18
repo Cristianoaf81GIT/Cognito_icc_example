@@ -20,6 +20,6 @@ export class ProductsAdminStack extends cdk.Stack {
          tracing: lambda.Tracing.ACTIVE,
          memorySize: 129,
          timeout: cdk.Duration.seconds(5)
-      })
+      });
    }
 }
