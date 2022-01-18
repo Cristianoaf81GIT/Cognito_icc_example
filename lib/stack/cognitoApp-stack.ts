@@ -51,6 +51,13 @@ export class CognitoAppStack extends cdk.Stack {
     //     },
     //     accountRecovery: cognito.AccountRecovery.EMAIL_ONLY, 
     //   });
+    
+    // customerPool
+    //   .addDomain('CustomerDomain', {
+    //     cognitoDomain: {
+    //       domainPrefix: props.branch.concat('-caf-customer-service')
+    //     }
+    //   });
 
 
     const logGroup = new cwlogs.LogGroup(this, 'CognitoApiLogs');
