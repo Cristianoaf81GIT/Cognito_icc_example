@@ -16,6 +16,43 @@ export class CognitoAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: CognitoAppStackProps) {
     super(scope, id, props);
 
+
+    // cognito customer user pool
+    // const customerPool = new cognito
+    //   .UserPool(this, 'CustomerPool', {
+    //     userPoolName: 'CustomerPool',
+    //     removalPolicy: cdk.RemovalPolicy.DESTROY,
+    //     selfSignUpEnabled: true,
+    //     autoVerify: {
+    //       email: true,
+    //       phone: false,
+    //     },
+    //     userVerification: {
+    //       emailStyle: cognito.VerificationEmailStyle.CODE,
+    //       emailSubject: 'Verify your email to use Cognito Test Service',
+    //       emailBody: 'Thanks to signing up to Cognito Test Service! this is yours verification code {####}'
+    //     },
+    //     signInAliases: {
+    //       username: false,
+    //       email: true
+    //     },
+    //     standardAttributes: {
+    //       fullname: {
+    //         required: true,
+    //         mutable: false,
+    //       }
+    //     },
+    //     passwordPolicy: {
+    //       minLength: 8,
+    //       requireLowercase: true,
+    //       requireUppercase: true,
+    //       requireDigits: true,
+    //       tempPasswordValidity: cdk.Duration.days(3),
+    //     },
+    //     accountRecovery: cognito.AccountRecovery.EMAIL_ONLY, 
+    //   });
+
+
     const logGroup = new cwlogs.LogGroup(this, 'CognitoApiLogs');
 
     const api = new apigateway
