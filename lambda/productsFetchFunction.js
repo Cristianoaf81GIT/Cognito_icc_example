@@ -8,11 +8,20 @@ AWS.config.update({
 });
 
 
+const cognitoIdentityServiceProvider = new AWS.cognitoIdentityServiceProvider({
+  apiVersion: '2016-04-18'
+});
 exports.handler = async function (event, context) {
   const apiRequestId = event.requestContext.requestId;
   const lambdaRequestId = context.awsRequestId;
   const method = event.httpMethod;
   
+  const userInfo =  await cognitoIdentityServiceProvider.getUser({
+    AccessToken: event.headers.Authorization 
+ }).promise();
+
+ console.log(userInfo);
+ 
   console.log(
   `API Gateway RequestId: ${apiRequestId} - Lambda RequestId: ${lambdaRequestId}`
   );
