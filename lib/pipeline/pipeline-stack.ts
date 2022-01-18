@@ -3,6 +3,7 @@ import { Construct } from 'constructs';
 import * as cdk_pipeline from 'aws-cdk-lib/pipelines';
 
 import * as dotenv from 'dotenv';
+import { CognitoStage } from './cognito-stage';
 dotenv.config();
 
 
@@ -34,5 +35,14 @@ export class PipelineStack extends cdk.Stack {
       });
 
     // add stage here
+    const cognitoStage = new CognitoStage(this, props.branch.concat('Stage'), {
+      branch: props.branch,
+      env: {
+        account: props.awsAccount,
+        region: props.awsRegion
+      }
+    });
+
+    pipeline.addStage(cognitoStage);
   }
 }
