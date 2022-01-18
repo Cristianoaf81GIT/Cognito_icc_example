@@ -7,12 +7,23 @@ AWS.config.update({
 region: awsRegion,
 });
 
+const cognitoIdentityServiceProvider = new AWS.cognitoIdentityServiceProvider({
+  apiVersion: '2016-04-18'
+});
+
 exports.handler = async function (event, context) {
   const apiRequestId = event.requestContext.requestId;
   const lambdaRequestId = context.awsRequestId;
   console.log(
   `API Gateway RequestId: ${apiRequestId} - Lambda RequestId: ${lambdaRequestId}`
   );
+  
+  const userInfo =  await cognitoIdentityServiceProvider.getUser({
+     AccessToken: event.headers.Authorization 
+  }).promise();
+
+  console.log(userInfo);
+
   if (event.resource === "/products") {
     return {
     statusCode: 200,
