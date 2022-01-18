@@ -18,11 +18,22 @@ exports.handler = async function (event, context) {
   );
 
   if (method === 'GET') {
-    return {
-      statusCode: 200,
-      headers: {},
-      body: JSON.stringify("GET /products"),
-    }
+    if (event.resource === "/products") {
+      // web e mobile
+      return {
+        statusCode: 200,
+        headers: {},
+        body: JSON.stringify("GET /products"), 
+      } 
+    } else if (event.resource === "/products/{id}") {
+      // web
+      const productId = event.pathParameters.id;
+      return {
+        statusCode: 200,
+        headers: {},
+        body: JSON.stringify(`GET /products/${productId}`), 
+      } 
+    } 
   }
 
   return {

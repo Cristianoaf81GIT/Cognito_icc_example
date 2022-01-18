@@ -4,7 +4,7 @@ import * as lambdaNodeJS from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as cwlogs from 'aws-cdk-lib/aws-logs';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
-
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 interface CognitoAppStackProps extends cdk.StackProps {
   branch: string;
@@ -16,49 +16,134 @@ export class CognitoAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: CognitoAppStackProps) {
     super(scope, id, props);
 
+    const postConfirmationHandler = new lambdaNodeJS
+      .NodejsFunction(this, 'PostConfirmationFunction', {
+        functionName: 'PostConfirmationFunction',
+        entry: 'lambda/postConfirmationFunction.js',
+        handler: 'handler',
+        bundling: {
+          minify: true,
+          sourceMap: false,
+        },
+        tracing: lambda.Tracing.ACTIVE,
+        memorySize: 129,
+        timeout: cdk.Duration.seconds(5)
+      });
+
+      const preAutenticationHandler = new lambdaNodeJS
+      .NodejsFunction(this, 'PreAuthenticationFunction', {
+        functionName: 'PreAuthenticationFunction',
+        entry: 'lambda/preAuthenticationFunction.js',
+        handler: 'handler',
+        bundling: {
+          minify: true,
+          sourceMap: false,
+        },
+        tracing: lambda.Tracing.ACTIVE,
+        memorySize: 129,
+        timeout: cdk.Duration.seconds(5)
+      });
 
     // cognito customer user pool
-    // const customerPool = new cognito
-    //   .UserPool(this, 'CustomerPool', {
-    //     userPoolName: 'CustomerPool',
-    //     removalPolicy: cdk.RemovalPolicy.DESTROY,
-    //     selfSignUpEnabled: true,
-    //     autoVerify: {
-    //       email: true,
-    //       phone: false,
-    //     },
-    //     userVerification: {
-    //       emailStyle: cognito.VerificationEmailStyle.CODE,
-    //       emailSubject: 'Verify your email to use Cognito Test Service',
-    //       emailBody: 'Thanks to signing up to Cognito Test Service! this is yours verification code {####}'
-    //     },
-    //     signInAliases: {
-    //       username: false,
-    //       email: true
-    //     },
-    //     standardAttributes: {
-    //       fullname: {
-    //         required: true,
-    //         mutable: false,
-    //       }
-    //     },
-    //     passwordPolicy: {
-    //       minLength: 8,
-    //       requireLowercase: true,
-    //       requireUppercase: true,
-    //       requireDigits: true,
-    //       tempPasswordValidity: cdk.Duration.days(3),
-    //     },
-    //     accountRecovery: cognito.AccountRecovery.EMAIL_ONLY, 
-    //   });
+    const customerPool = new cognito
+      .UserPool(this, 'CustomerPool', {
+        userPoolName: 'CustomerPool',
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        selfSignUpEnabled: true,
+        autoVerify: {
+          email: true,
+          phone: false,
+        },
+        userVerification: {
+          emailStyle: cognito.VerificationEmailStyle.CODE,
+          emailSubject: 'Verify your email to use Cognito Test Service',
+          emailBody: 'Thanks to signing up to Cognito Test Service! this is yours verification code {####}'
+        },
+        signInAliases: {
+          username: false,
+          email: true
+        },
+        standardAttributes: {
+          fullname: {
+            required: true,
+            mutable: false,
+          }
+        },
+        passwordPolicy: {
+          minLength: 8,
+          requireLowercase: true,
+          requireUppercase: true,
+          requireDigits: true,
+          tempPasswordValidity: cdk.Duration.days(3),
+        },
+        accountRecovery: cognito.AccountRecovery.EMAIL_ONLY, 
+      });
     
-    // customerPool
-    //   .addDomain('CustomerDomain', {
-    //     cognitoDomain: {
-    //       domainPrefix: props.branch.concat('-caf-customer-service')
-    //     }
-    //   });
+    customerPool
+      .addDomain('CustomerDomain', {
+        cognitoDomain: {
+          domainPrefix: props.branch.concat('-caf-customer-service')
+        }
+      });
 
+    const customerWebScope = new cognito
+      .ResourceServerScope({
+        scopeName: 'web',
+        scopeDescription: 'Customer web operations'
+      });
+
+    const customerMobileScope = new cognito
+      .ResourceServerScope({
+        scopeName: 'mobile',
+        scopeDescription: 'Customer mobile operations'
+      });
+
+    const customerResourceServer = customerPool
+      .addResourceServer("CustomerResourceServer", {
+        identifier: 'customer',
+        userPoolResourceServerName: 'CustomerResourceServer',
+        scopes: [customerWebScope, customerMobileScope]
+      });
+
+    customerPool.addClient('customer-web-client', {
+      userPoolClientName: 'customerWebClient',
+      authFlows: {
+        userPassword: true,
+      },
+      accessTokenValidity: cdk.Duration.minutes(60),
+      refreshTokenValidity: cdk.Duration.days(7),
+      oAuth: {
+        scopes: [
+          cognito
+            .OAuthScope
+            .resourceServer(customerResourceServer, customerWebScope)
+        ]
+      }
+    });
+
+    customerPool.addClient('customer-mobile-client', {
+      userPoolClientName: 'customerMobileClient',
+      authFlows: {
+        userPassword: true,
+      },
+      accessTokenValidity: cdk.Duration.minutes(60),
+      refreshTokenValidity: cdk.Duration.days(7),
+      oAuth: {
+        scopes: [
+          cognito
+            .OAuthScope
+            .resourceServer(customerResourceServer, customerMobileScope)
+        ]
+      }
+    });
+
+    const productsAuthorizer = new apigateway
+      .CognitoUserPoolsAuthorizer(this, 'ProductsAuthorizer', {
+        cognitoUserPools: [customerPool],
+        authorizerName: 'ProductsAuthorizer'
+      });
+    
+    
 
     const logGroup = new cwlogs.LogGroup(this, 'CognitoApiLogs');
 
@@ -82,13 +167,41 @@ export class CognitoAppStack extends cdk.Stack {
               user: true
             }),
         }
-      });
+      });    
+    
+    const productsFetchWebMobileIntegrationOption = {
+      authorizer: productsAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationScopes: ['customer/web', 'customer/mobile']
+    };  
+
+    const productsFetchWebIntegrationOption = {
+      authorizer: productsAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationScopes: ['customer/web']
+    };  
 
     const productsFetchFunctionIntegration = new apigateway
       .LambdaIntegration(props.productsFetchHandler);
     
     const productResource = api.root.addResource('products');
-    productResource.addMethod('GET', productsFetchFunctionIntegration);
+    
+    // list all products
+    productResource
+      .addMethod(
+        'GET', 
+        productsFetchFunctionIntegration, 
+        productsFetchWebMobileIntegrationOption
+      );
+
+    // get prod by id - web client
+    const productIdResource = productResource.addResource('{id}');
+    productIdResource
+      .addMethod(
+        'GET', 
+        productsFetchFunctionIntegration, 
+        productsFetchWebIntegrationOption
+      );        
   }
 }
 

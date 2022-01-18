@@ -2,9 +2,6 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { PipelineStack } from '../lib/pipeline/pipeline-stack';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
 
 
 const app = new cdk.App();
